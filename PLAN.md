@@ -247,8 +247,14 @@ needs an evaluation set, a metric, and a documented limitation.
   performs locked dependency installation, linting, test-DB migrations, the
   full suite, and a production-image build on every PR/main push. It explicitly
   does not deploy, because a real target environment/secrets choice remains a
-  human decision. Details: [`docs/deployment.md`](docs/deployment.md). Next:
-  model/data cards and architecture decision records.
+  human decision. Details: [`docs/deployment.md`](docs/deployment.md). Product
+  documentation is now present in [`docs/api.md`](docs/api.md),
+  [`docs/model-card.md`](docs/model-card.md), [`docs/data-card.md`](docs/data-card.md),
+  and three ADRs in [`docs/adr/`](docs/adr/). They distinguish measured claims
+  from synthetic workflow fixtures and explicitly record known limits. The
+  remaining M6 decision is deployment to a real target and its secret/storage
+  configuration; no target has been selected, so it is intentionally not
+  assumed.
 - [ ] **7. External validation** — get feedback from at least two people who
   were not involved in development; turn their feedback into issues and ship
   fixes.
