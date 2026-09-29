@@ -3,7 +3,10 @@ from typing import Protocol
 from openai import AsyncOpenAI
 from pydantic import BaseModel, ConfigDict
 
+from app.llmops.tracing import trace_call
 from app.policy_assistant.retrieval import IndexedChunk
+
+ANSWER_PROMPT_VERSION = "policy-answer-v1"
 
 ANSWER_INSTRUCTIONS = """Answer the question using only the provided
 passages. Every claim must be supported by a direct quote from a passage,
@@ -51,26 +54,36 @@ class LLMPolicyAssistant:
             f"{indexed.chunk.text}"
             for indexed in passages
         )
-        response = await self.client.responses.create(
+        async with trace_call(
+            call_type="policy_answer",
             model=self.model,
-            input=[
-                {"role": "system", "content": ANSWER_INSTRUCTIONS},
-                {
-                    "role": "user",
-                    "content": f"Passages:\n{passage_text}\n\nQuestion: {query}",
+            prompt_version=ANSWER_PROMPT_VERSION,
+        ) as usage:
+            response = await self.client.responses.create(
+                model=self.model,
+                input=[
+                    {"role": "system", "content": ANSWER_INSTRUCTIONS},
+                    {
+                        "role": "user",
+                        "content": f"Passages:\n{passage_text}\n\nQuestion: {query}",
+                    },
+                ],
+                text={
+                    "format": {
+                        "type": "json_schema",
+                        "name": "policy_answer",
+                        "strict": True,
+                        "schema": PolicyAnswer.model_json_schema(),
+                    }
                 },
-            ],
-            text={
-                "format": {
-                    "type": "json_schema",
-                    "name": "policy_answer",
-                    "strict": True,
-                    "schema": PolicyAnswer.model_json_schema(),
-                }
-            },
-        )
+            )
+            if response.usage is not None:
+                usage["input_tokens"] = response.usage.input_tokens
+                usage["output_tokens"] = response.usage.output_tokens
 
-        if not response.output_text:
-            raise ValueError("The policy assistant returned no output.")
+            if not response.output_text:
+                raise ValueError("The policy assistant returned no output.")
 
-        return PolicyAnswer.model_validate_json(response.output_text)
+            answer = PolicyAnswer.model_validate_json(response.output_text)
+
+        return answer

@@ -154,9 +154,39 @@ needs an evaluation set, a metric, and a documented limitation.
   orchestration with fakes, HTTP endpoint with dependency overrides — no
   automated test calls the real OpenAI API), 88 total, all passing, Ruff
   clean.
-- [ ] **5. LLMOps and security** — prompt/model/version registry, traces,
+- [~] **5. LLMOps and security** — prompt/model/version registry, traces,
   quality/cost/latency dashboards, PII redaction, prompt-injection tests, and
-  regression gates.
+  regression gates. Traces and the prompt/model/version registry are
+  complete: every one of the system's 4 LLM call sites (extraction,
+  embedding, rerank, policy answer) is wrapped in
+  [`app/llmops/tracing.py`](app/llmops/tracing.py)'s `trace_call`, which
+  persists an `LLMTrace` row (model, a `*_PROMPT_VERSION` constant next to
+  each call site's instructions, input/output token counts, latency,
+  success/error, and a redacted error message) independently of the
+  caller's own DB transaction — a trace is observability data and should
+  still be recorded even if the request it came from later fails. This
+  doubles as the version registry: grouping traces by
+  `(call_type, model, prompt_version)` shows how each prompt/model
+  combination is performing. `GET /llmops/traces/summary`
+  ([`app/services/llmops.py`](app/services/llmops.py)) is the aggregation
+  query a cost/latency/quality dashboard would read from — call count,
+  success/error counts, average latency, and total tokens per
+  `(call_type, model, prompt_version)`; the dashboard UI itself belongs to
+  Milestone 6. PII redaction
+  ([`app/llmops/redaction.py`](app/llmops/redaction.py)) is a best-effort
+  regex scrubber (email, phone, SSN-like, credit-card-like patterns) for
+  observability output, not a comprehensive PII detector — it does not
+  catch names or addresses, and is documented as such in its own
+  docstring. Verified against the real OpenAI API, not just fakes: a real
+  extraction call produced a trace with genuine token counts (375 in / 949
+  out) and latency (11.9s). 13 new tests (redaction, tracing success/error
+  paths, summary aggregation, HTTP endpoint), 100 total, all passing, Ruff
+  clean. Deferred and not yet built: linking a trace to the specific
+  document/bundle it came from (the schema has a nullable
+  `correlation_id` column for this, unused so far because wiring it
+  through would change 4 Protocol signatures and every fake implementing
+  them). Prompt-injection regression tests for the extraction pipeline
+  and a regression-gate script remain.
 - [ ] **6. Product delivery** — reviewer UI, API documentation, Docker
   Compose, CI/CD, deploy, model card, data card, architecture decision records,
   and a reproducible demo dataset.

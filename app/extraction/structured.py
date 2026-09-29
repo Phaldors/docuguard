@@ -3,6 +3,10 @@ from typing import Literal, Protocol
 from openai import AsyncOpenAI
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.llmops.tracing import trace_call
+
+EXTRACTION_PROMPT_VERSION = "extraction-v1"
+
 
 class ExtractedField(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -47,23 +51,33 @@ class StructuredDocumentExtractor:
         self.model = model
 
     async def extract(self, *, document_text: str) -> DocumentFields:
-        response = await self.client.responses.create(
+        async with trace_call(
+            call_type="extraction",
             model=self.model,
-            input=[
-                {"role": "system", "content": EXTRACTION_INSTRUCTIONS},
-                {"role": "user", "content": document_text},
-            ],
-            text={
-                "format": {
-                    "type": "json_schema",
-                    "name": "document_fields",
-                    "strict": True,
-                    "schema": DocumentFields.model_json_schema(),
-                }
-            },
-        )
+            prompt_version=EXTRACTION_PROMPT_VERSION,
+        ) as usage:
+            response = await self.client.responses.create(
+                model=self.model,
+                input=[
+                    {"role": "system", "content": EXTRACTION_INSTRUCTIONS},
+                    {"role": "user", "content": document_text},
+                ],
+                text={
+                    "format": {
+                        "type": "json_schema",
+                        "name": "document_fields",
+                        "strict": True,
+                        "schema": DocumentFields.model_json_schema(),
+                    }
+                },
+            )
+            if response.usage is not None:
+                usage["input_tokens"] = response.usage.input_tokens
+                usage["output_tokens"] = response.usage.output_tokens
 
-        if not response.output_text:
-            raise ValueError("The model returned no extraction output.")
+            if not response.output_text:
+                raise ValueError("The model returned no extraction output.")
 
-        return DocumentFields.model_validate_json(response.output_text)
+            fields = DocumentFields.model_validate_json(response.output_text)
+
+        return fields
