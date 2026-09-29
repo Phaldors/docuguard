@@ -222,9 +222,19 @@ needs an evaluation set, a metric, and a documented limitation.
   not part of the standard pytest suite; 10 new unit tests cover
   `check_regression`'s pure comparison logic, bringing the project to
   110 tests total, all passing, Ruff clean.
-- [ ] **6. Product delivery** — reviewer UI, API documentation, Docker
+- [~] **6. Product delivery** — reviewer UI, API documentation, Docker
   Compose, CI/CD, deploy, model card, data card, architecture decision records,
-  and a reproducible demo dataset.
+  and a reproducible demo dataset. The first delivery artifact is complete:
+  [`app/scripts/seed_demo.py`](app/scripts/seed_demo.py) provisions a
+  source-controlled, fully synthetic reviewer case without an API key or a
+  network call. It seeds a fixed invoice / purchase-order / delivery-note
+  bundle with raw evidence, persisted field extractions, and the reconciler's
+  deterministic result: one critical total mismatch and one advisory
+  low-confidence supplier. The script is idempotent by default and `--reset`
+  replaces only the fixed demo bundle, so a product walkthrough can always
+  begin from the same state. [`docs/demo.md`](docs/demo.md) explicitly marks
+  this as a workflow fixture rather than an extraction benchmark. Next:
+  reviewer UI over this API/data contract.
 - [ ] **7. External validation** — get feedback from at least two people who
   were not involved in development; turn their feedback into issues and ship
   fixes.

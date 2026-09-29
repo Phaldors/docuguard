@@ -39,10 +39,10 @@ human approval own consequential decisions.
 
 ## Project status
 
-The ingestion foundation is running: PostgreSQL migrations, PDF validation,
-durable storage, a transactional processing-job ledger, native PDF text
-extraction, and test isolation are in place. Scanned/image-only PDFs are
-explicitly marked `needs_ocr`; OCR itself is the next capability.
+Milestones 0–5 are complete: ingestion, structured extraction,
+cross-document reconciliation, reviewer audit actions, a grounded policy
+assistant, and LLM tracing/security controls. The next product-delivery work
+starts with a reproducible reviewer demo; see [the demo guide](docs/demo.md).
 
 Run the API from the project directory:
 
