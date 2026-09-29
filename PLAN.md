@@ -233,8 +233,15 @@ needs an evaluation set, a metric, and a documented limitation.
   low-confidence supplier. The script is idempotent by default and `--reset`
   replaces only the fixed demo bundle, so a product walkthrough can always
   begin from the same state. [`docs/demo.md`](docs/demo.md) explicitly marks
-  this as a workflow fixture rather than an extraction benchmark. Next:
-  reviewer UI over this API/data contract.
+  this as a workflow fixture rather than an extraction benchmark. The first
+  reviewer UI is also complete at `/reviewer`: it is a dependency-free screen
+  served by FastAPI, built over a dedicated read-only
+  `GET /bundles/{id}/review` read model. It shows the queue, raw extracted
+  evidence, field values/confidence, deterministic findings, and audit history;
+  corrections and decisions remain explicit calls to their existing append-only
+  endpoints. API data is inserted with `textContent`, not HTML interpolation,
+  so untrusted document text cannot become a stored-XSS payload. Next: API
+  documentation and deployment artifacts.
 - [ ] **7. External validation** — get feedback from at least two people who
   were not involved in development; turn their feedback into issues and ship
   fixes.

@@ -38,6 +38,7 @@ class DocumentExtractionSummaryResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     method: str
+    text_content: str
     page_count: int
     character_count: int
     requires_ocr: bool
@@ -120,3 +121,12 @@ class RecordCaseDecisionRequest(BaseModel):
 class CaseDecisionResponse(BaseModel):
     bundle: DocumentBundleResponse
     audit_event: AuditEventResponse
+
+
+class ReviewerCaseResponse(BaseModel):
+    """Read model for the human-review screen, never a decision payload."""
+
+    bundle: DocumentBundleResponse
+    documents: list[DocumentDetailResponse]
+    discrepancies: list[BundleDiscrepancyResponse]
+    audit_events: list[AuditEventResponse]

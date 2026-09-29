@@ -5,7 +5,7 @@ from fastapi import FastAPI, HTTPException
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.api.routes import bundles, llmops, policy_assistant
+from app.api.routes import bundles, llmops, policy_assistant, reviewer
 from app.config import get_settings
 from app.db.session import engine, session_factory
 
@@ -26,6 +26,7 @@ app = FastAPI(
 app.include_router(bundles.router)
 app.include_router(llmops.router)
 app.include_router(policy_assistant.router)
+app.include_router(reviewer.router)
 
 
 @app.get("/health")

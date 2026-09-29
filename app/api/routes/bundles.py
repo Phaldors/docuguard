@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db_session
 from app.models.audit_event import AuditEvent
 from app.models.bundle import DocumentBundle
+from app.models.discrepancy import BundleDiscrepancy
 from app.models.document import Document
 from app.models.document_extraction import DocumentExtraction
 from app.models.document_field_extraction import DocumentFieldExtraction
@@ -24,6 +25,7 @@ from app.schemas.bundle import (
     ReconcileBundleResponse,
     RecordCaseDecisionRequest,
     RecordFieldCorrectionRequest,
+    ReviewerCaseResponse,
 )
 from app.services.documents import (
     BundleNotFoundError,
@@ -195,6 +197,96 @@ async def get_document(
             if field_extraction is not None
             else None
         ),
+    )
+
+
+@router.get(
+    "/{bundle_id}/review",
+    response_model=ReviewerCaseResponse,
+)
+async def get_reviewer_case(
+    bundle_id: UUID,
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> ReviewerCaseResponse:
+    """Return all evidence needed for a human to review one bundle.
+
+    This is deliberately read-only. Corrections and case decisions stay on
+    their explicit append-only endpoints instead of becoming implicit side
+    effects of loading the reviewer screen.
+    """
+    bundle = await session.get(DocumentBundle, bundle_id)
+    if bundle is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document bundle was not found.",
+        )
+
+    documents = list(
+        await session.scalars(
+            select(Document)
+            .where(Document.bundle_id == bundle_id)
+            .order_by(Document.created_at)
+        )
+    )
+    document_ids = [document.id for document in documents]
+    extractions = {
+        row.document_id: row
+        for row in await session.scalars(
+            select(DocumentExtraction).where(
+                DocumentExtraction.document_id.in_(document_ids)
+            )
+        )
+    }
+    fields = {
+        row.document_id: row
+        for row in await session.scalars(
+            select(DocumentFieldExtraction).where(
+                DocumentFieldExtraction.document_id.in_(document_ids)
+            )
+        )
+    }
+    discrepancies = list(
+        await session.scalars(
+            select(BundleDiscrepancy)
+            .where(BundleDiscrepancy.bundle_id == bundle_id)
+            .order_by(BundleDiscrepancy.created_at)
+        )
+    )
+    events = list(
+        await session.scalars(
+            select(AuditEvent)
+            .where(AuditEvent.bundle_id == bundle_id)
+            .order_by(AuditEvent.created_at)
+        )
+    )
+
+    return ReviewerCaseResponse(
+        bundle=DocumentBundleResponse.model_validate(bundle),
+        documents=[
+            DocumentDetailResponse(
+                **DocumentResponse.model_validate(document).model_dump(),
+                extraction=(
+                    DocumentExtractionSummaryResponse.model_validate(
+                        extractions[document.id]
+                    )
+                    if document.id in extractions
+                    else None
+                ),
+                fields=(
+                    DocumentFieldExtractionSummaryResponse.model_validate(
+                        fields[document.id]
+                    )
+                    if document.id in fields
+                    else None
+                ),
+            )
+            for document in documents
+        ],
+        discrepancies=[
+            BundleDiscrepancyResponse.model_validate(discrepancy)
+            for discrepancy in discrepancies
+        ],
+        audit_events=[AuditEventResponse.model_validate(event) for event in events],
     )
 
 

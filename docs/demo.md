@@ -44,7 +44,9 @@ uv run python -m app.scripts.seed_demo --reset
 
 `--reset` affects the single fixed demo bundle only; it does not clear any
 other tenant's data. Start the API with `uv run uvicorn app.main:app --reload`
-and inspect the queue at `http://127.0.0.1:8000/bundles?status=ready_for_review`.
+and open `http://127.0.0.1:8000/reviewer`. The dependency-free reviewer screen
+loads the queue, shows extracted evidence and confidence, exposes deterministic
+findings, and writes explicit correction/decision events to the audit trail.
 
 ## Deliberate limits
 
