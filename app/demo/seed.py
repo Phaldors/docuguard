@@ -34,6 +34,7 @@ class DemoDocument:
     document_date: str
     currency: str
     total: str | None
+    total_evidence: str | None
 
 
 DEMO_DOCUMENTS = (
@@ -54,6 +55,7 @@ DEMO_DOCUMENTS = (
         document_date="2026-09-15",
         currency="USD",
         total="1240.00",
+        total_evidence="1,240.00 USD",
     ),
     DemoDocument(
         id=UUID("0ec01f69-b864-4a14-881a-060443157723"),
@@ -72,6 +74,7 @@ DEMO_DOCUMENTS = (
         document_date="2026-09-10",
         currency="USD",
         total="1300.00",
+        total_evidence="1,300.00 USD",
     ),
     DemoDocument(
         id=UUID("4e934051-e2ce-4c17-9c09-b8e56bdd9964"),
@@ -89,6 +92,7 @@ DEMO_DOCUMENTS = (
         document_date="2026-09-14",
         currency="USD",
         total=None,
+        total_evidence=None,
     ),
 )
 
@@ -158,11 +162,7 @@ async def seed_demo(session: AsyncSession, *, replace: bool = False) -> Document
                 currency_evidence=fixture.currency,
                 currency_confidence=0.99,
                 total_value=fixture.total,
-                total_evidence=(
-                    f"{fixture.total} {fixture.currency}"
-                    if fixture.total is not None
-                    else None
-                ),
+                total_evidence=fixture.total_evidence,
                 total_confidence=0.99 if fixture.total is not None else 0.0,
             )
         )

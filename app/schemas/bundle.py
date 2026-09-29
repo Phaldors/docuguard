@@ -52,14 +52,19 @@ class DocumentFieldExtractionSummaryResponse(BaseModel):
 
     document_type: str
     supplier_name_value: str | None
+    supplier_name_evidence: str | None
     supplier_name_confidence: float
     document_number_value: str | None
+    document_number_evidence: str | None
     document_number_confidence: float
     document_date_value: str | None
+    document_date_evidence: str | None
     document_date_confidence: float
     currency_value: str | None
+    currency_evidence: str | None
     currency_confidence: float
     total_value: str | None
+    total_evidence: str | None
     total_confidence: float
     created_at: datetime
 

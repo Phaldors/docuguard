@@ -25,6 +25,7 @@ def test_reviewer_case_endpoint_returns_evidence_findings_and_audit_history() ->
     assert body["documents"][0]["extraction"] is not None
     assert "Invoice total" in body["documents"][0]["extraction"]["text_content"]
     assert body["documents"][0]["fields"] is not None
+    assert body["documents"][0]["fields"]["total_evidence"] == "1,240.00 USD"
     assert {item["discrepancy_type"] for item in body["discrepancies"]} == {
         "low_confidence_field",
         "total_mismatch",
@@ -38,3 +39,5 @@ def test_reviewer_page_is_served() -> None:
 
     assert response.status_code == 200
     assert "Reviewer Console" in response.text
+    assert "Evidence workspace" in response.text
+    assert "source text" in response.text
