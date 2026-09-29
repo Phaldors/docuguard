@@ -12,6 +12,10 @@ development and the disposable test database.
 - `api` runs as an unprivileged `docuguard` user, persists uploaded documents in
   the separate `documents_data` volume, and exposes `/health` as its container
   health check.
+- The API container sets `DOCUGUARD_RUN_MIGRATIONS=false` because the separate
+  `migrate` service owns migrations. The image defaults this switch to true so
+  a single-instance portfolio host that does not support pre-deploy commands
+  can still initialise its own schema.
 - Secrets come from environment variables. No `.env` file or API key is copied
   into the image.
 

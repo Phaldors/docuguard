@@ -262,6 +262,11 @@ needs an evaluation set, a metric, and a documented limitation.
   non-durable (`docs/render.md`): no persistent disk and a 30-day free
   database are unsuitable for real customer documents. Actual cloud resource
   creation remains Arda's explicit action in Render; the repository is ready.
+  Manual Render Web Service creation was also encountered in practice, where
+  Blueprint `preDeployCommand` is not applied. The container now defaults to a
+  startup migration for this **single-instance demo fallback**; production
+  Compose explicitly disables it because its one-shot migration service owns
+  schema upgrades.
 - [ ] **7. External validation** — get feedback from at least two people who
   were not involved in development; turn their feedback into issues and ship
   fixes.

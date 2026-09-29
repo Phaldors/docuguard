@@ -18,6 +18,7 @@ RUN uv sync --locked --no-install-project --no-editable
 COPY alembic.ini ./
 COPY alembic ./alembic
 COPY app ./app
+COPY docker-entrypoint.sh ./docker-entrypoint.sh
 # The policy assistant reads this committed, precomputed index at runtime.
 COPY docs/policy-index ./docs/policy-index
 RUN uv sync --locked --no-editable
@@ -25,10 +26,11 @@ RUN uv sync --locked --no-editable
 RUN groupadd --system docuguard \
     && useradd --system --gid docuguard --create-home docuguard \
     && mkdir -p /app/data/documents \
+    && chmod 755 /app/docker-entrypoint.sh \
     && chown -R docuguard:docuguard /app
 
 USER docuguard
 
 EXPOSE 8000
 
-CMD ["/app/.venv/bin/uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["/app/docker-entrypoint.sh"]

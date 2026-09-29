@@ -16,6 +16,8 @@ services:
           property: connectionString
       - key: DOCUGUARD_DOCUMENT_STORAGE_PATH
         value: /app/data/documents
+      - key: DOCUGUARD_RUN_MIGRATIONS
+        value: "false"
       - key: DOCUGUARD_OPENAI_API_KEY
         sync: false
 

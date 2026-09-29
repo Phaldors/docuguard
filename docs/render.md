@@ -5,6 +5,11 @@ customer-document deployment. It creates a Docker web service and Render
 Postgres in Frankfurt, runs migrations before every deploy, and seeds the
 synthetic reviewer case once after the initial deploy.
 
+If a service is created manually instead of through the Blueprint, its
+container also runs `alembic upgrade head` at startup by default. This is a
+single-instance demo fallback, not the multi-replica production strategy;
+`compose.production.yaml` keeps migrations as a separate one-shot service.
+
 ## Why the database URL needs no manual rewrite
 
 Render provides its Postgres `connectionString` in standard

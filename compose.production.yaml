@@ -28,7 +28,9 @@ services:
 
   api:
     build: .
-    environment: *app_environment
+    environment:
+      <<: *app_environment
+      DOCUGUARD_RUN_MIGRATIONS: "false"
     ports:
       - "${DOCUGUARD_PORT:-8000}:8000"
     volumes:
