@@ -153,25 +153,37 @@ def _check_cross_document_agreement(
     discrepancy_type: DiscrepancyType,
     normalize: Callable[[str], str | None],
 ) -> list[Discrepancy]:
-    present = [
-        (document, normalize(getattr(document.fields, field_name).value))
-        for document in documents
-        if getattr(document.fields, field_name).value is not None
-    ]
-    present = [(document, value) for document, value in present if value is not None]
+    present: list[tuple[BundleDocument, str, str]] = []
+    for document in documents:
+        raw_value = getattr(document.fields, field_name).value
+        if raw_value is None:
+            continue
+        normalized_value = normalize(raw_value)
+        if normalized_value is not None:
+            present.append((document, raw_value, normalized_value))
     if len(present) < 2:
         return []
 
-    distinct_values = sorted({value for _, value in present})
-    if len(distinct_values) <= 1:
+    distinct_normalized_values = sorted({normalized for _, _, normalized in present})
+    if len(distinct_normalized_values) <= 1:
         return []
+
+    # Normalised values decide equality; raw values are the evidence a reviewer
+    # needs to understand the discrepancy. Never expose an internal comparison
+    # token such as "124000" as if it were the extracted total.
+    display_value_by_normalized = {
+        normalized: raw for _, raw, normalized in present
+    }
+    display_values = [
+        display_value_by_normalized[value] for value in distinct_normalized_values
+    ]
 
     return [
         _discrepancy(
             discrepancy_type,
             f"'{field_name}' disagrees across the bundle: "
-            f"{', '.join(distinct_values)}.",
-            tuple(document.document_id for document, _ in present),
+            f"{', '.join(display_values)}.",
+            tuple(document.document_id for document, _, _ in present),
         )
     ]
 

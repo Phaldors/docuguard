@@ -68,6 +68,7 @@ def test_a_genuine_total_mismatch_is_flagged_as_critical() -> None:
     assert len(discrepancies) == 1
     assert discrepancies[0].discrepancy_type == DiscrepancyType.TOTAL_MISMATCH
     assert discrepancies[0].severity == "critical"
+    assert discrepancies[0].message.endswith("1240.00, 1300.00.")
 
 
 def test_supplier_name_case_and_whitespace_variance_is_not_a_mismatch() -> None:
