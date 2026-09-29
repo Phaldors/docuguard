@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     database_url: str
     openai_api_key: SecretStr | None = None
     extraction_model: str = "gpt-5-mini"
+    embedding_model: str = "text-embedding-3-small"
+    reranker_model: str = "gpt-5-mini"
+    policy_assistant_model: str = "gpt-5-mini"
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

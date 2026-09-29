@@ -99,8 +99,61 @@ needs an evaluation set, a metric, and a documented limitation.
   rejected/needs_info state without going through this endpoint. `GET
   /bundles/{id}/audit-events` returns the full append-only history. 13 new
   tests (service-level + HTTP endpoint), 65 total, all passing, Ruff clean.
-- [ ] **4. Grounded policy assistant** — hybrid retrieval, reranking, cited
-  responses, adversarial retrieval tests, and access-aware tooling.
+- [x] **4. Grounded policy assistant** — hybrid retrieval, reranking, cited
+  responses, adversarial retrieval tests, and access-aware tooling. Per
+  docs/product-brief.md, this is isolated from the decision pipeline: it
+  answers questions about how DocuGuard itself works (routing policy,
+  discrepancy taxonomy, decision ownership), not about a specific bundle's
+  content. Its corpus is therefore DocuGuard's own design docs
+  (`docs/product-brief.md`, `docs/data-contract.md`,
+  `docs/reviewer-workflow.md`) rather than a licensed external dataset —
+  access-aware tooling starts here, as a fixed allow-list of document
+  paths with no filesystem access from a request.
+
+  Retrieval ([`app/policy_assistant/retrieval.py`](app/policy_assistant/retrieval.py))
+  is genuinely hybrid: a dependency-free BM25 implementation (stopword-
+  filtered) plus cosine similarity over precomputed OpenAI embeddings,
+  combined with Reciprocal Rank Fusion so the two signals never need score
+  normalisation against each other. The corpus is chunked by markdown
+  section and embedded once by
+  [`app/scripts/build_policy_index.py`](app/scripts/build_policy_index.py)
+  into a committed index (`docs/policy-index/index.json`), not re-embedded
+  per request. An LLM reranker
+  ([`app/policy_assistant/reranker.py`](app/policy_assistant/reranker.py))
+  re-scores the hybrid candidates, and answer synthesis
+  ([`app/policy_assistant/answer.py`](app/policy_assistant/answer.py))
+  requires every claim to carry a citation with a quote and returns
+  `grounded: false` instead of guessing when the corpus doesn't cover the
+  question. `POST /policy-assistant/ask` wires it together.
+
+  A real retrieval-quality bug was caught during manual end-to-end
+  verification (not by the automated tests, which use fakes): the top-8
+  hybrid results initially missed the one chunk that actually answered a
+  real test question, because BM25 gave equal weight to generic query
+  words ("does", "the", "a") as to the distinctive ones ("missing",
+  "required"). Fixed by adding a short stopword filter and widening
+  `retrieval_limit` from 8 to 12 so the reranker sees a wider net on this
+  small (23-chunk) corpus. A second issue, caught the same way: cited
+  quotes echoed the chunk's heading label as if it were part of the body
+  text. Fixed by separating heading from body in the prompt and requiring
+  quotes to be verbatim substrings of body text only.
+
+  [`app/scripts/evaluate_policy_assistant.py`](app/scripts/evaluate_policy_assistant.py)
+  is a small hand-written truth set (this corpus is too small for a CORD-
+  style held-out split) covering grounded, abstention, and adversarial
+  (prompt-injection) queries. Latest run:
+  recall@12 100% (5/5), citation support rate 80% (4/5 — the one miss
+  reproduced clean on retry, consistent with `gpt-5-mini` not supporting
+  `temperature`, already a documented limitation), abstention rate 100%
+  (3/3 out-of-corpus queries correctly returned `grounded: false`), and
+  injection-resistance rate 100% (2/2 — queries that tried to make the
+  assistant output "APPROVED" with no citations were refused, with the
+  refusal itself grounded in the reviewer-workflow docs). Full report:
+  `docs/eval-reports/policy-assistant-20260929T144047Z.json`. 23 new
+  tests (pure retrieval logic, corpus chunking, schema validation, service
+  orchestration with fakes, HTTP endpoint with dependency overrides — no
+  automated test calls the real OpenAI API), 88 total, all passing, Ruff
+  clean.
 - [ ] **5. LLMOps and security** — prompt/model/version registry, traces,
   quality/cost/latency dashboards, PII redaction, prompt-injection tests, and
   regression gates.
