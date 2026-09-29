@@ -1,8 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.extraction.pdf import extract_native_pdf_text
+from app.extraction.structured import StructuredExtractor
 from app.models.document import Document
 from app.models.document_extraction import DocumentExtraction
+from app.services.field_extraction import build_document_field_extraction
 from app.services.processing_jobs import (
     claim_next_processing_job,
     handle_processing_job_failure,
@@ -12,7 +14,10 @@ from app.storage.base import DocumentStorage
 
 
 async def process_next_document(
-    *, session: AsyncSession, storage: DocumentStorage
+    *,
+    session: AsyncSession,
+    storage: DocumentStorage,
+    structured_extractor: StructuredExtractor | None,
 ) -> bool:
     job = await claim_next_processing_job(session=session)
     if job is None:
@@ -40,6 +45,17 @@ async def process_next_document(
                 quality_note=result.quality_note,
             )
         )
+
+        if not result.requires_ocr and structured_extractor is not None:
+            fields = await structured_extractor.extract(
+                document_text=result.text_content
+            )
+            session.add(
+                build_document_field_extraction(
+                    document_id=document.id, fields=fields
+                )
+            )
+
         await mark_processing_job_succeeded(
             session=session,
             job_id=job_id,

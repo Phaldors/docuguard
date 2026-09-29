@@ -46,5 +46,23 @@ class DocumentExtractionSummaryResponse(BaseModel):
     created_at: datetime
 
 
+class DocumentFieldExtractionSummaryResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    document_type: str
+    supplier_name_value: str | None
+    supplier_name_confidence: float
+    document_number_value: str | None
+    document_number_confidence: float
+    document_date_value: str | None
+    document_date_confidence: float
+    currency_value: str | None
+    currency_confidence: float
+    total_value: str | None
+    total_confidence: float
+    created_at: datetime
+
+
 class DocumentDetailResponse(DocumentResponse):
     extraction: DocumentExtractionSummaryResponse | None
+    fields: DocumentFieldExtractionSummaryResponse | None

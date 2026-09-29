@@ -9,11 +9,13 @@ from app.db.session import get_db_session
 from app.models.bundle import DocumentBundle
 from app.models.document import Document
 from app.models.document_extraction import DocumentExtraction
+from app.models.document_field_extraction import DocumentFieldExtraction
 from app.schemas.bundle import (
     CreateDocumentBundleRequest,
     DocumentBundleResponse,
     DocumentDetailResponse,
     DocumentExtractionSummaryResponse,
+    DocumentFieldExtractionSummaryResponse,
     DocumentResponse,
 )
 from app.services.documents import (
@@ -138,11 +140,21 @@ async def get_document(
             DocumentExtraction.document_id == document.id,
         )
     )
+    field_extraction = await session.scalar(
+        select(DocumentFieldExtraction).where(
+            DocumentFieldExtraction.document_id == document.id,
+        )
+    )
     return DocumentDetailResponse(
         **DocumentResponse.model_validate(document).model_dump(),
         extraction=(
             DocumentExtractionSummaryResponse.model_validate(extraction)
             if extraction is not None
+            else None
+        ),
+        fields=(
+            DocumentFieldExtractionSummaryResponse.model_validate(field_extraction)
+            if field_extraction is not None
             else None
         ),
     )

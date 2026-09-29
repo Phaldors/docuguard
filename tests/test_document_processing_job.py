@@ -175,7 +175,9 @@ async def test_worker_persists_empty_native_extraction_for_ocr_fallback(
         )
         await session.commit()
 
-        did_process = await process_next_document(session=session, storage=storage)
+        did_process = await process_next_document(
+            session=session, storage=storage, structured_extractor=None
+        )
         extraction = await session.scalar(
             select(DocumentExtraction).where(
                 DocumentExtraction.document_id == document.id

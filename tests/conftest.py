@@ -27,8 +27,8 @@ async def reset_database_after_test() -> AsyncIterator[None]:
     async with engine.begin() as connection:
         await connection.execute(
             text(
-                "TRUNCATE TABLE document_extractions, document_processing_jobs, "
-                "documents, document_bundles"
+                "TRUNCATE TABLE document_field_extractions, document_extractions, "
+                "document_processing_jobs, documents, document_bundles"
             ),
         )
 

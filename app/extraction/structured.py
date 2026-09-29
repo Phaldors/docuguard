@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Protocol
 
 from openai import AsyncOpenAI
 from pydantic import BaseModel, ConfigDict, Field
@@ -35,6 +35,10 @@ of a receipt or invoice). It is never a purchased product, menu item, line
 item description, or payment method. If the only candidate text is a
 product or line item name, treat supplier_name as missing rather than
 returning that text."""
+
+
+class StructuredExtractor(Protocol):
+    async def extract(self, *, document_text: str) -> DocumentFields: ...
 
 
 class StructuredDocumentExtractor:
