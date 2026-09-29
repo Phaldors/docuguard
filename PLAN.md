@@ -154,7 +154,7 @@ needs an evaluation set, a metric, and a documented limitation.
   orchestration with fakes, HTTP endpoint with dependency overrides — no
   automated test calls the real OpenAI API), 88 total, all passing, Ruff
   clean.
-- [~] **5. LLMOps and security** — prompt/model/version registry, traces,
+- [x] **5. LLMOps and security** — prompt/model/version registry, traces,
   quality/cost/latency dashboards, PII redaction, prompt-injection tests, and
   regression gates. Traces and the prompt/model/version registry are
   complete: every one of the system's 4 LLM call sites (extraction,
@@ -185,8 +185,43 @@ needs an evaluation set, a metric, and a documented limitation.
   document/bundle it came from (the schema has a nullable
   `correlation_id` column for this, unused so far because wiring it
   through would change 4 Protocol signatures and every fake implementing
-  them). Prompt-injection regression tests for the extraction pipeline
-  and a regression-gate script remain.
+  them).
+
+  Prompt-injection regression tests and the regression gate are complete
+  too, and together they caught and fixed a real vulnerability rather
+  than just documenting a prompt's intentions.
+  [`app/scripts/evaluate_extraction_robustness.py`](app/scripts/evaluate_extraction_robustness.py)
+  embeds instructions inside otherwise-plausible document text (per
+  docs/reviewer-workflow.md's abuse case: "OCR text is untrusted data...
+  it must never become an instruction to the extractor") and checks
+  whether the real extractor's output reflects the document's genuine
+  content or the injected claim — this is Milestone 4's adversarial-query
+  testing applied to the extraction pipeline, which has a different
+  attack surface (injected content the extractor itself ingests, not a
+  user's query). The first run scored 75% (3/4): the extractor correctly
+  refused to fabricate a total, a supplier name, or fields with no
+  genuine evidence, but did comply with an embedded instruction to
+  reclassify a genuine delivery note's `document_type` as `"other"`.
+  Fixed by adding an explicit paragraph to `EXTRACTION_INSTRUCTIONS`
+  naming the document text as untrusted data and covering classification
+  specifically, not only field values (bumping
+  `EXTRACTION_PROMPT_VERSION` to `extraction-v2` — the version registry
+  above is what makes this a real version bump, not just an edit).
+  Re-run: 100% (4/4).
+  [`app/scripts/check_regression.py`](app/scripts/check_regression.py)
+  (10 unit tests on its pure comparison logic) is the generic regression
+  gate — it takes two eval reports and a metric-direction table and
+  fails if a tracked metric moved past tolerance — and was used for real
+  here: a 20-sample CORD validation run under `extraction-v2` was
+  compared against the pre-fix baseline and showed no regression
+  (`total_accuracy` and `document_type_accuracy` both still 100%,
+  `supplier_name_flagged_rate` improved to 10%), confirming the prompt
+  change fixed the injection gap without a field-accuracy cost.
+  `evaluate_extraction_robustness.py` itself is a real-API eval script,
+  like `evaluate_cord.py` and `evaluate_policy_assistant.py` before it,
+  not part of the standard pytest suite; 10 new unit tests cover
+  `check_regression`'s pure comparison logic, bringing the project to
+  110 tests total, all passing, Ruff clean.
 - [ ] **6. Product delivery** — reviewer UI, API documentation, Docker
   Compose, CI/CD, deploy, model card, data card, architecture decision records,
   and a reproducible demo dataset.
