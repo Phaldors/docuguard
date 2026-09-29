@@ -2,6 +2,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import RedirectResponse
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -27,6 +28,12 @@ app.include_router(bundles.router)
 app.include_router(llmops.router)
 app.include_router(policy_assistant.router)
 app.include_router(reviewer.router)
+
+
+@app.get("/", include_in_schema=False)
+def public_landing() -> RedirectResponse:
+    """Send portfolio visitors directly to the review workflow."""
+    return RedirectResponse(url="/reviewer", status_code=307)
 
 
 @app.get("/health")

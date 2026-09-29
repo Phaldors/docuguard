@@ -266,7 +266,10 @@ needs an evaluation set, a metric, and a documented limitation.
   Blueprint `preDeployCommand` is not applied. The container now defaults to a
   startup migration for this **single-instance demo fallback**; production
   Compose explicitly disables it because its one-shot migration service owns
-  schema upgrades.
+  schema upgrades. The first live Render deployment was verified end-to-end:
+  migrations, synthetic seed, reviewer UI, queue, and case API all returned
+  successfully. The public root previously returned 404, so it now redirects
+  to `/reviewer`; a portfolio visitor reaches the actual workflow directly.
 - [ ] **7. External validation** — get feedback from at least two people who
   were not involved in development; turn their feedback into issues and ship
   fixes.

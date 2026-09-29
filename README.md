@@ -12,6 +12,8 @@ This is not a generic chat-with-PDF product. It is an AI workflow system where
 models assist with extraction and explanation, while deterministic rules and
 human approval own consequential decisions.
 
+The deployed portfolio demo opens directly into the reviewer workflow at `/`.
+
 ## Intended workflow
 
 1. A user uploads a document bundle: invoice, purchase order, and delivery
