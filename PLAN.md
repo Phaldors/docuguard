@@ -253,8 +253,15 @@ needs an evaluation set, a metric, and a documented limitation.
   and three ADRs in [`docs/adr/`](docs/adr/). They distinguish measured claims
   from synthetic workflow fixtures and explicitly record known limits. The
   remaining M6 decision is deployment to a real target and its secret/storage
-  configuration; no target has been selected, so it is intentionally not
-  assumed.
+  configuration. A Render Blueprint now exists for a **portfolio demo**:
+  [`render.yaml`](render.yaml) provisions managed Postgres, uses a DB-backed
+  `/ready` health check, runs migrations before each deploy, and seeds only the
+  synthetic case. The application accepts Render's managed `postgresql://`
+  URL directly and normalises it to the async SQLAlchemy dialect under test.
+  The blueprint deliberately uses the free tier and is documented as
+  non-durable (`docs/render.md`): no persistent disk and a 30-day free
+  database are unsuitable for real customer documents. Actual cloud resource
+  creation remains Arda's explicit action in Render; the repository is ready.
 - [ ] **7. External validation** — get feedback from at least two people who
   were not involved in development; turn their feedback into issues and ship
   fixes.

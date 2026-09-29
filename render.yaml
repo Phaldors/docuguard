@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: docuguard-demo
+    runtime: docker
+    plan: free
+    region: frankfurt
+    healthCheckPath: /ready
+    preDeployCommand: /app/.venv/bin/alembic upgrade head
+    initialDeployHook: /app/.venv/bin/python -m app.scripts.seed_demo --reset
+    envVars:
+      - key: DOCUGUARD_ENVIRONMENT
+        value: production
+      - key: DOCUGUARD_DATABASE_URL
+        fromDatabase:
+          name: docuguard-demo-postgres
+          property: connectionString
+      - key: DOCUGUARD_DOCUMENT_STORAGE_PATH
+        value: /app/data/documents
+      - key: DOCUGUARD_OPENAI_API_KEY
+        sync: false
+
+databases:
+  - name: docuguard-demo-postgres
+    plan: free
+    region: frankfurt
+    databaseName: docuguard
+    user: docuguard

@@ -1,7 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import SecretStr
+from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -21,6 +21,21 @@ class Settings(BaseSettings):
         env_prefix="DOCUGUARD_",
     )
     document_storage_path: Path = Path("data/documents")
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def normalize_postgres_url(cls, value: str) -> str:
+        """Accept managed-Postgres URLs while keeping SQLAlchemy async internally.
+
+        Render and several other managed Postgres providers expose a standard
+        ``postgresql://`` connection string. SQLAlchemy's async engine requires
+        the explicit ``postgresql+asyncpg://`` dialect prefix instead.
+        """
+        if value.startswith("postgres://"):
+            return value.replace("postgres://", "postgresql+asyncpg://", 1)
+        if value.startswith("postgresql://"):
+            return value.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return value
 
 
 @lru_cache
