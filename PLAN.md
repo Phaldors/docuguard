@@ -240,8 +240,15 @@ needs an evaluation set, a metric, and a documented limitation.
   evidence, field values/confidence, deterministic findings, and audit history;
   corrections and decisions remain explicit calls to their existing append-only
   endpoints. API data is inserted with `textContent`, not HTML interpolation,
-  so untrusted document text cannot become a stored-XSS payload. Next: API
-  documentation and deployment artifacts.
+  so untrusted document text cannot become a stored-XSS payload. Production
+  delivery is now defined too: `Dockerfile` creates a non-root, lockfile-based
+  image; `compose.production.yaml` separates PostgreSQL, one-shot migrations,
+  and the API with persistent document storage; and `.github/workflows/ci.yml`
+  performs locked dependency installation, linting, test-DB migrations, the
+  full suite, and a production-image build on every PR/main push. It explicitly
+  does not deploy, because a real target environment/secrets choice remains a
+  human decision. Details: [`docs/deployment.md`](docs/deployment.md). Next:
+  model/data cards and architecture decision records.
 - [ ] **7. External validation** — get feedback from at least two people who
   were not involved in development; turn their feedback into issues and ship
   fixes.

@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    env:
+      DOCUGUARD_ENVIRONMENT: test
+      DOCUGUARD_DATABASE_URL: postgresql+asyncpg://docuguard_test:docuguard_test_local@localhost:5433/docuguard_test
+      DOCUGUARD_DOCUMENT_STORAGE_PATH: /tmp/docuguard-documents
+    services:
+      postgres:
+        image: postgres:17.6-alpine
+        env:
+          POSTGRES_DB: docuguard_test
+          POSTGRES_USER: docuguard_test
+          POSTGRES_PASSWORD: docuguard_test_local
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U docuguard_test -d docuguard_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.12.19"
+          enable-cache: true
+      - name: Install Python and locked dependencies
+        run: |
+          uv python install 3.14
+          uv sync --locked
+      - name: Lint
+        run: uv run ruff check .
+      - name: Migrate dedicated test database
+        run: uv run alembic upgrade head
+      - name: Test
+        run: uv run pytest -q
+
+  container:
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build production image
+        run: docker build --tag docuguard:ci .

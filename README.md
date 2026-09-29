@@ -57,4 +57,5 @@ uv run python -m app.workers.run_once
 ```
 
 See [PLAN.md](PLAN.md) and [product brief](docs/product-brief.md) for the
-full product scope.
+full product scope. Production container/CI instructions are in
+[deployment.md](docs/deployment.md).
