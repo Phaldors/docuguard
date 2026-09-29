@@ -1,0 +1,156 @@
+{
+  "dataset": "naver-clova-ix/cord-v2",
+  "dataset_split": "validation",
+  "sample_count": 100,
+  "extraction_model": "gpt-5-mini",
+  "commit": "ba570219fb4c5d7a033fc4a2124c10c8fab0e818",
+  "generated_at": "2026-09-29T13:50:50.145095+00:00",
+  "metrics": {
+    "total_accuracy": 0.9795918367346939,
+    "total_checked": 98,
+    "document_type_accuracy": 1.0,
+    "enrichment_rate": 0.06,
+    "enrichment_note": "document_number/currency: CORD has no ground truth for these fields, so a non-null value is not scored as correct or incorrect -- it may genuinely be printed on the receipt. This rate only shows how often the model reports finding one.",
+    "supplier_name_flagged_count": 16,
+    "supplier_name_flagged_rate": 0.16,
+    "supplier_name_note": "CORD has no supplier_name ground truth either, but manual review of early runs showed the model repeatedly returning a menu item name instead of a supplier/store name. Every non-null supplier_name is flagged for human review below rather than scored, since we cannot auto-verify it.",
+    "total_confidence_calibration": [
+      {
+        "confidence_range": "0.7-0.9",
+        "sample_count": 2,
+        "actual_accuracy": 0.5
+      },
+      {
+        "confidence_range": "0.9-1.0 (exclusive)",
+        "sample_count": 92,
+        "actual_accuracy": 0.9891304347826086
+      },
+      {
+        "confidence_range": "1.0",
+        "sample_count": 4,
+        "actual_accuracy": 1.0
+      }
+    ],
+    "calibration_note": "Confidence calibration is measured only for 'total', the only field with real ground truth. A well-calibrated model is correct about as often as its stated confidence within each bucket; see compute_calibration()'s docstring."
+  },
+  "limitations": [
+    "CORD only ground-truths 'total'; supplier_name, document_number, and currency have no ground truth at all in this dataset.",
+    "CORD documents are retail receipts, not invoices/purchase orders/delivery notes; document_type is graded as correct for either 'other' or 'invoice', since our schema has no receipt category and a receipt is a defensible invoice call.",
+    "gpt-5-mini is a reasoning model and does not support the 'temperature' parameter, so run-to-run variance is expected even with identical inputs and no code changes. Compare reports across multiple runs before treating a metric change as caused by a code/prompt change.",
+    "Text was reconstructed from CORD's annotated OCR words, not run through DocuGuard's own OCR pipeline (not yet integrated)."
+  ],
+  "failures": [
+    {
+      "index": 63,
+      "field": "total",
+      "expected": "56800",
+      "actual": "51636",
+      "confidence": 0.9
+    },
+    {
+      "index": 65,
+      "field": "total",
+      "expected": "54600",
+      "actual": "49636",
+      "confidence": 0.8
+    }
+  ],
+  "supplier_name_flags": [
+    {
+      "index": 1,
+      "value": "Kopi Susu Kolonel",
+      "evidence": "Kopi Susu Kolonel",
+      "confidence": 0.8
+    },
+    {
+      "index": 5,
+      "value": "LE MINERAL",
+      "evidence": "LE MINERAL",
+      "confidence": 0.9
+    },
+    {
+      "index": 7,
+      "value": "Choco Devil",
+      "evidence": "Choco Devil",
+      "confidence": 0.92
+    },
+    {
+      "index": 28,
+      "value": "ELEPHANT READ BEAN",
+      "evidence": "ELEPHANT READ BEAN",
+      "confidence": 0.9
+    },
+    {
+      "index": 43,
+      "value": "ROTI UNYIL",
+      "evidence": "ROTI UNYIL",
+      "confidence": 0.9
+    },
+    {
+      "index": 45,
+      "value": "AOP Seafood",
+      "evidence": "AOP Seafood",
+      "confidence": 0.9
+    },
+    {
+      "index": 46,
+      "value": "MARBLE CASTELA",
+      "evidence": "MARBLE CASTELA",
+      "confidence": 0.9
+    },
+    {
+      "index": 52,
+      "value": "KENTHIR 2",
+      "evidence": "KENTHIR 2",
+      "confidence": 0.8
+    },
+    {
+      "index": 58,
+      "value": "Viet Milk Coffee",
+      "evidence": "Viet Milk Coffee",
+      "confidence": 0.95
+    },
+    {
+      "index": 61,
+      "value": "Populaire Chocolate",
+      "evidence": "Populaire Chocolate",
+      "confidence": 0.9
+    },
+    {
+      "index": 65,
+      "value": "BASO TAHU",
+      "evidence": "BASO TAHU",
+      "confidence": 0.9
+    },
+    {
+      "index": 71,
+      "value": "Dum Dum Thai Coffee",
+      "evidence": "Dum Dum Thai Coffee",
+      "confidence": 0.9
+    },
+    {
+      "index": 75,
+      "value": "KFC Winger HC",
+      "evidence": "KFC Winger HC",
+      "confidence": 0.9
+    },
+    {
+      "index": 76,
+      "value": "Enting2 Dua Bandeng Ori",
+      "evidence": "Enting2 Dua Bandeng Ori",
+      "confidence": 0.9
+    },
+    {
+      "index": 91,
+      "value": "K7 1217",
+      "evidence": "K7 1217",
+      "confidence": 0.6
+    },
+    {
+      "index": 99,
+      "value": "Giant Squid",
+      "evidence": "Giant Squid",
+      "confidence": 0.95
+    }
+  ]
+}

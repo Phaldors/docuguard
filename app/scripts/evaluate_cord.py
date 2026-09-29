@@ -55,6 +55,43 @@ def normalize_amount(value: str | None) -> str | None:
     return digits or None
 
 
+# Buckets are wide because the model tends to cluster its confidence values
+# (e.g. mostly 0.85/0.9/0.95/1.0) rather than spreading continuously; a
+# calibration table with fine-grained buckets would mostly be empty.
+CALIBRATION_BUCKETS = [
+    (0.0, 0.7, "0.0-0.7"),
+    (0.7, 0.9, "0.7-0.9"),
+    (0.9, 1.0, "0.9-1.0 (exclusive)"),
+    (1.0, 1.0, "1.0"),
+]
+
+
+def compute_calibration(samples: list[dict]) -> list[dict]:
+    """A well-calibrated model's stated confidence should roughly equal its
+    actual accuracy in that confidence range. E.g. predictions made at ~0.9
+    confidence should be correct about 90% of the time. If a bucket's
+    accuracy is far below its confidence range, the model is overconfident
+    there; a reviewer threshold set from stated confidence alone would be
+    unsafe without checking this."""
+    table = []
+    for low, high, label in CALIBRATION_BUCKETS:
+        if low == high:
+            bucket = [s for s in samples if s["confidence"] == low]
+        else:
+            bucket = [s for s in samples if low <= s["confidence"] < high]
+        if not bucket:
+            continue
+        correct = sum(1 for s in bucket if s["correct"])
+        table.append(
+            {
+                "confidence_range": label,
+                "sample_count": len(bucket),
+                "actual_accuracy": correct / len(bucket),
+            }
+        )
+    return table
+
+
 async def evaluate(limit: int, split: str, commit: str | None) -> dict:
     settings = get_settings()
     if settings.openai_api_key is None:
@@ -75,6 +112,7 @@ async def evaluate(limit: int, split: str, commit: str | None) -> dict:
     enrichment_fields_found = 0
     supplier_name_flagged = 0
     supplier_name_flags: list[dict] = []
+    calibration_samples: list[dict] = []
     failures: list[dict] = []
 
     for index in range(sample_count):
@@ -109,7 +147,11 @@ async def evaluate(limit: int, split: str, commit: str | None) -> dict:
         if expected_total is not None:
             total_checked += 1
             actual_total = normalize_amount(fields.total.value)
-            if actual_total == expected_total:
+            is_correct = actual_total == expected_total
+            calibration_samples.append(
+                {"correct": is_correct, "confidence": fields.total.confidence}
+            )
+            if is_correct:
                 total_correct += 1
             else:
                 failures.append(
@@ -118,6 +160,7 @@ async def evaluate(limit: int, split: str, commit: str | None) -> dict:
                         "field": "total",
                         "expected": expected_total,
                         "actual": actual_total,
+                        "confidence": fields.total.confidence,
                     }
                 )
 
@@ -146,6 +189,8 @@ async def evaluate(limit: int, split: str, commit: str | None) -> dict:
                     "confidence": supplier_field.confidence,
                 }
             )
+
+    calibration = compute_calibration(calibration_samples)
 
     report = {
         "dataset": DATASET_NAME,
@@ -179,6 +224,13 @@ async def evaluate(limit: int, split: str, commit: str | None) -> dict:
                 "a menu item name instead of a supplier/store name. Every "
                 "non-null supplier_name is flagged for human review below "
                 "rather than scored, since we cannot auto-verify it."
+            ),
+            "total_confidence_calibration": calibration,
+            "calibration_note": (
+                "Confidence calibration is measured only for 'total', the "
+                "only field with real ground truth. A well-calibrated model "
+                "is correct about as often as its stated confidence within "
+                "each bucket; see compute_calibration()'s docstring."
             ),
         },
         "limitations": [
