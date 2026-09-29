@@ -20,6 +20,10 @@ services:
         value: "false"
       - key: DOCUGUARD_SEED_DEMO
         value: "true"
+      - key: DOCUGUARD_PUBLIC_DEMO
+        value: "true"
+      - key: DOCUGUARD_DEMO_REVIEW_TOKEN
+        sync: false
       - key: DOCUGUARD_OPENAI_API_KEY
         sync: false
 

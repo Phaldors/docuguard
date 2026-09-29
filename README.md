@@ -63,3 +63,5 @@ full product scope. Production container/CI instructions are in
 [deployment.md](docs/deployment.md); the API guide, model card, data card, and
 architecture decisions live under [`docs/`](docs/). A deliberately limited
 Render portfolio-demo Blueprint is documented in [render.md](docs/render.md).
+Its public-demo access boundary is documented in
+[public-demo-security.md](docs/public-demo-security.md).

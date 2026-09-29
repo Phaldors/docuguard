@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     embedding_model: str = "text-embedding-3-small"
     reranker_model: str = "gpt-5-mini"
     policy_assistant_model: str = "gpt-5-mini"
+    public_demo: bool = False
+    demo_review_token: SecretStr | None = None
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

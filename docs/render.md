@@ -16,6 +16,12 @@ the schema upgrade, so the reviewer screen is usable without Render Shell. Do
 not set this in an environment containing real cases: every service restart
 would reset the demo fixture and its audit history.
 
+Before sharing the URL, also set `DOCUGUARD_PUBLIC_DEMO=true` and add a long,
+random `DOCUGUARD_DEMO_REVIEW_TOKEN`. This keeps the site fixed to the
+synthetic case, blocks uploads/model-backed endpoints, and requires the token
+only for reviewer actions. Send the token to testers separately from the URL;
+the complete behavior is in [public-demo-security.md](public-demo-security.md).
+
 ## Why the database URL needs no manual rewrite
 
 Render provides its Postgres `connectionString` in standard

@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db_session
+from app.demo.seed import DEMO_BUNDLE_ID
 from app.models.audit_event import AuditEvent
 from app.models.bundle import DocumentBundle
 from app.models.discrepancy import BundleDiscrepancy
@@ -26,6 +27,12 @@ from app.schemas.bundle import (
     RecordCaseDecisionRequest,
     RecordFieldCorrectionRequest,
     ReviewerCaseResponse,
+)
+from app.security.public_demo import (
+    block_public_demo_mutation,
+    is_public_demo,
+    require_demo_reviewer_access,
+    restrict_to_demo_bundle,
 )
 from app.services.documents import (
     BundleNotFoundError,
@@ -62,6 +69,7 @@ async def create_bundle(
     payload: CreateDocumentBundleRequest,
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> DocumentBundleResponse:
+    block_public_demo_mutation()
     bundle = DocumentBundle(tenant_id=payload.tenant_id)
 
     session.add(bundle)
@@ -80,6 +88,8 @@ async def list_bundles(
     status_filter: Annotated[str | None, Query(alias="status")] = None,
 ) -> list[DocumentBundleResponse]:
     query = select(DocumentBundle).order_by(DocumentBundle.created_at)
+    if is_public_demo():
+        query = query.where(DocumentBundle.id == DEMO_BUNDLE_ID)
     if status_filter is not None:
         query = query.where(DocumentBundle.status == status_filter)
 
@@ -95,6 +105,7 @@ async def get_bundle(
     bundle_id: UUID,
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> DocumentBundleResponse:
+    restrict_to_demo_bundle(bundle_id)
     bundle = await session.get(DocumentBundle, bundle_id)
 
     if bundle is None:
@@ -117,6 +128,7 @@ async def upload_document(
     session: Annotated[AsyncSession, Depends(get_db_session)],
     storage: Annotated[DocumentStorage, Depends(get_document_storage)],
 ) -> DocumentResponse:
+    block_public_demo_mutation()
     if file.filename is None:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -162,6 +174,7 @@ async def get_document(
     document_id: UUID,
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> DocumentDetailResponse:
+    restrict_to_demo_bundle(bundle_id)
     document = await session.scalar(
         select(Document).where(
             Document.id == document_id,
@@ -214,6 +227,7 @@ async def get_reviewer_case(
     their explicit append-only endpoints instead of becoming implicit side
     effects of loading the reviewer screen.
     """
+    restrict_to_demo_bundle(bundle_id)
     bundle = await session.get(DocumentBundle, bundle_id)
     if bundle is None:
         raise HTTPException(
@@ -298,6 +312,7 @@ async def reconcile_bundle_route(
     bundle_id: UUID,
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> ReconcileBundleResponse:
+    block_public_demo_mutation()
     try:
         bundle, discrepancies = await reconcile_bundle(
             session=session, bundle_id=bundle_id
@@ -330,6 +345,7 @@ async def list_audit_events(
     bundle_id: UUID,
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> list[AuditEventResponse]:
+    restrict_to_demo_bundle(bundle_id)
     bundle = await session.get(DocumentBundle, bundle_id)
     if bundle is None:
         raise HTTPException(
@@ -355,7 +371,9 @@ async def record_field_correction_route(
     document_id: UUID,
     payload: RecordFieldCorrectionRequest,
     session: Annotated[AsyncSession, Depends(get_db_session)],
+    _: Annotated[None, Depends(require_demo_reviewer_access)],
 ) -> AuditEventResponse:
+    restrict_to_demo_bundle(bundle_id)
     try:
         event = await record_field_correction(
             session=session,
@@ -389,7 +407,9 @@ async def record_case_decision_route(
     bundle_id: UUID,
     payload: RecordCaseDecisionRequest,
     session: Annotated[AsyncSession, Depends(get_db_session)],
+    _: Annotated[None, Depends(require_demo_reviewer_access)],
 ) -> CaseDecisionResponse:
+    restrict_to_demo_bundle(bundle_id)
     try:
         bundle, event = await record_case_decision(
             session=session,

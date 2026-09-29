@@ -17,6 +17,7 @@ from app.schemas.policy_assistant import (
     AskPolicyQuestionResponse,
     CitationResponse,
 )
+from app.security.public_demo import block_public_demo_protected_endpoint
 from app.services.policy_assistant import EmptyCorpusError, ask_policy_question
 
 router = APIRouter(prefix="/policy-assistant", tags=["policy-assistant"])
@@ -30,6 +31,7 @@ async def ask_policy_question_route(
     assistant: Annotated[PolicyAssistant | None, Depends(get_policy_assistant)],
     index: Annotated[list[IndexedChunk], Depends(get_policy_index)],
 ) -> AskPolicyQuestionResponse:
+    block_public_demo_protected_endpoint()
     if embedder is None or reranker is None or assistant is None:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

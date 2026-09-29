@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db_session
 from app.schemas.llmops import TraceSummaryResponse
+from app.security.public_demo import block_public_demo_protected_endpoint
 from app.services.llmops import summarize_traces
 
 router = APIRouter(prefix="/llmops", tags=["llmops"])
@@ -14,6 +15,7 @@ router = APIRouter(prefix="/llmops", tags=["llmops"])
 async def get_trace_summary(
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> list[TraceSummaryResponse]:
+    block_public_demo_protected_endpoint()
     rows = await summarize_traces(session=session)
     return [
         TraceSummaryResponse(
