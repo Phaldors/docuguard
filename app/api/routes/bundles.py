@@ -1,17 +1,20 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db_session
+from app.models.audit_event import AuditEvent
 from app.models.bundle import DocumentBundle
 from app.models.document import Document
 from app.models.document_extraction import DocumentExtraction
 from app.models.document_field_extraction import DocumentFieldExtraction
 from app.schemas.bundle import (
+    AuditEventResponse,
     BundleDiscrepancyResponse,
+    CaseDecisionResponse,
     CreateDocumentBundleRequest,
     DocumentBundleResponse,
     DocumentDetailResponse,
@@ -19,6 +22,8 @@ from app.schemas.bundle import (
     DocumentFieldExtractionSummaryResponse,
     DocumentResponse,
     ReconcileBundleResponse,
+    RecordCaseDecisionRequest,
+    RecordFieldCorrectionRequest,
 )
 from app.services.documents import (
     BundleNotFoundError,
@@ -29,6 +34,15 @@ from app.services.reconciliation import (
     BundleNotFoundError as BundleNotFoundForReconciliationError,
 )
 from app.services.reconciliation import BundleNotReadyError, reconcile_bundle
+from app.services.reviewing import BundleNotFoundError as BundleNotFoundForReviewingError
+from app.services.reviewing import (
+    DocumentNotFoundError,
+    InvalidActionError,
+    InvalidBundleStateError,
+    UnknownFieldError,
+    record_case_decision,
+    record_field_correction,
+)
 from app.storage.base import DocumentStorage
 from app.storage.dependencies import get_document_storage
 
@@ -51,6 +65,22 @@ async def create_bundle(
     await session.refresh(bundle)
 
     return DocumentBundleResponse.model_validate(bundle)
+
+
+@router.get(
+    "",
+    response_model=list[DocumentBundleResponse],
+)
+async def list_bundles(
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+    status_filter: Annotated[str | None, Query(alias="status")] = None,
+) -> list[DocumentBundleResponse]:
+    query = select(DocumentBundle).order_by(DocumentBundle.created_at)
+    if status_filter is not None:
+        query = query.where(DocumentBundle.status == status_filter)
+
+    bundles = await session.scalars(query)
+    return [DocumentBundleResponse.model_validate(bundle) for bundle in bundles]
 
 
 @router.get(
@@ -195,4 +225,102 @@ async def reconcile_bundle_route(
             BundleDiscrepancyResponse.model_validate(discrepancy)
             for discrepancy in discrepancies
         ],
+    )
+
+
+@router.get(
+    "/{bundle_id}/audit-events",
+    response_model=list[AuditEventResponse],
+)
+async def list_audit_events(
+    bundle_id: UUID,
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> list[AuditEventResponse]:
+    bundle = await session.get(DocumentBundle, bundle_id)
+    if bundle is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document bundle was not found.",
+        )
+
+    events = await session.scalars(
+        select(AuditEvent)
+        .where(AuditEvent.bundle_id == bundle_id)
+        .order_by(AuditEvent.created_at)
+    )
+    return [AuditEventResponse.model_validate(event) for event in events]
+
+
+@router.post(
+    "/{bundle_id}/documents/{document_id}/corrections",
+    response_model=AuditEventResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def record_field_correction_route(
+    bundle_id: UUID,
+    document_id: UUID,
+    payload: RecordFieldCorrectionRequest,
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> AuditEventResponse:
+    try:
+        event = await record_field_correction(
+            session=session,
+            bundle_id=bundle_id,
+            document_id=document_id,
+            field_name=payload.field_name,
+            action=payload.action,
+            actor=payload.actor,
+            new_value=payload.new_value,
+            reason=payload.reason,
+        )
+    except DocumentNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document was not found in this bundle.",
+        ) from None
+    except (UnknownFieldError, InvalidActionError) as error:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(error),
+        ) from error
+
+    return AuditEventResponse.model_validate(event)
+
+
+@router.post(
+    "/{bundle_id}/decision",
+    response_model=CaseDecisionResponse,
+)
+async def record_case_decision_route(
+    bundle_id: UUID,
+    payload: RecordCaseDecisionRequest,
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> CaseDecisionResponse:
+    try:
+        bundle, event = await record_case_decision(
+            session=session,
+            bundle_id=bundle_id,
+            action=payload.action,
+            actor=payload.actor,
+            reason=payload.reason,
+        )
+    except BundleNotFoundForReviewingError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document bundle was not found.",
+        ) from None
+    except InvalidActionError as error:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(error),
+        ) from error
+    except InvalidBundleStateError as error:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(error),
+        ) from error
+
+    return CaseDecisionResponse(
+        bundle=DocumentBundleResponse.model_validate(bundle),
+        audit_event=AuditEventResponse.model_validate(event),
     )

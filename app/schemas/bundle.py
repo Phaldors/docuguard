@@ -81,3 +81,42 @@ class BundleDiscrepancyResponse(BaseModel):
 class ReconcileBundleResponse(BaseModel):
     bundle: DocumentBundleResponse
     discrepancies: list[BundleDiscrepancyResponse]
+
+
+class AuditEventResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    bundle_id: UUID
+    document_id: UUID | None
+    event_type: str
+    action: str
+    field_name: str | None
+    prior_value: str | None
+    new_value: str | None
+    actor: str
+    reason: str | None
+    created_at: datetime
+
+
+class RecordFieldCorrectionRequest(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    field_name: str
+    action: str
+    actor: str = Field(min_length=1, max_length=128)
+    new_value: str | None = None
+    reason: str | None = None
+
+
+class RecordCaseDecisionRequest(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    action: str
+    actor: str = Field(min_length=1, max_length=128)
+    reason: str = Field(min_length=1)
+
+
+class CaseDecisionResponse(BaseModel):
+    bundle: DocumentBundleResponse
+    audit_event: AuditEventResponse

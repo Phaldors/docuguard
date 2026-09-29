@@ -47,7 +47,7 @@ needs an evaluation set, a metric, and a documented limitation.
   accuracy) — the model is not overconfident there. The 0.7-0.9 bucket has
   only 2 samples (50% accuracy), too few to draw a conclusion from; this is
   noted as a limitation in the report rather than treated as a finding.
-- [~] **3. Reconciliation engine** — deterministic cross-document rules,
+- [x] **3. Reconciliation engine** — deterministic cross-document rules,
   discrepancy taxonomy, reviewer queue, corrections, and audit events.
   Prerequisite closed: structured extraction was previously only reachable
   through standalone scripts (`extract_fields.py`, `evaluate_cord.py`) and
@@ -81,6 +81,24 @@ needs an evaluation set, a metric, and a documented limitation.
   exists yet to make partial re-evaluation meaningful. 18 new tests (pure
   rule-engine unit tests + DB-backed service tests + HTTP endpoint tests),
   all passing, Ruff clean.
+
+  Reviewer queue, corrections, and audit events are complete too, per
+  [`docs/reviewer-workflow.md`](docs/reviewer-workflow.md). `GET
+  /bundles?status=ready_for_review` lists the queue. Per that document's
+  routing policy ("it never edits the original extraction"), a reviewer
+  correction is never applied to `document_field_extractions` in place —
+  `POST /bundles/{id}/documents/{id}/corrections` (action: `kept` |
+  `corrected` | `marked_unavailable`, actor, optional new value, reason)
+  only appends an immutable `AuditEvent` recording the prior and new value;
+  the original extraction row is untouched. `POST /bundles/{id}/decision`
+  (action: `approved` | `rejected` | `needs_info`, actor, required reason)
+  records a case decision the same way and transitions the bundle's status;
+  it is only valid from `ready_for_review` (rejects with 409 otherwise),
+  and a missing/empty reason is rejected with 422 — no case can be decided
+  without a human-supplied reason, and no bundle reaches an approved/
+  rejected/needs_info state without going through this endpoint. `GET
+  /bundles/{id}/audit-events` returns the full append-only history. 13 new
+  tests (service-level + HTTP endpoint), 65 total, all passing, Ruff clean.
 - [ ] **4. Grounded policy assistant** — hybrid retrieval, reranking, cited
   responses, adversarial retrieval tests, and access-aware tooling.
 - [ ] **5. LLMOps and security** — prompt/model/version registry, traces,
