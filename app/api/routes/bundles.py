@@ -11,18 +11,24 @@ from app.models.document import Document
 from app.models.document_extraction import DocumentExtraction
 from app.models.document_field_extraction import DocumentFieldExtraction
 from app.schemas.bundle import (
+    BundleDiscrepancyResponse,
     CreateDocumentBundleRequest,
     DocumentBundleResponse,
     DocumentDetailResponse,
     DocumentExtractionSummaryResponse,
     DocumentFieldExtractionSummaryResponse,
     DocumentResponse,
+    ReconcileBundleResponse,
 )
 from app.services.documents import (
     BundleNotFoundError,
     DuplicateDocumentError,
     register_document,
 )
+from app.services.reconciliation import (
+    BundleNotFoundError as BundleNotFoundForReconciliationError,
+)
+from app.services.reconciliation import BundleNotReadyError, reconcile_bundle
 from app.storage.base import DocumentStorage
 from app.storage.dependencies import get_document_storage
 
@@ -157,4 +163,36 @@ async def get_document(
             if field_extraction is not None
             else None
         ),
+    )
+
+
+@router.post(
+    "/{bundle_id}/reconcile",
+    response_model=ReconcileBundleResponse,
+)
+async def reconcile_bundle_route(
+    bundle_id: UUID,
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> ReconcileBundleResponse:
+    try:
+        bundle, discrepancies = await reconcile_bundle(
+            session=session, bundle_id=bundle_id
+        )
+    except BundleNotFoundForReconciliationError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document bundle was not found.",
+        ) from None
+    except BundleNotReadyError as error:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(error),
+        ) from error
+
+    return ReconcileBundleResponse(
+        bundle=DocumentBundleResponse.model_validate(bundle),
+        discrepancies=[
+            BundleDiscrepancyResponse.model_validate(discrepancy)
+            for discrepancy in discrepancies
+        ],
     )

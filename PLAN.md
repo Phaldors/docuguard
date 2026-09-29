@@ -58,8 +58,29 @@ needs an evaluation set, a metric, and a documented limitation.
   `document_field_extractions` (one row per document, exposed via
   `GET /bundles/{id}/documents/{id}`). Extraction is skipped when OCR is
   required (no usable text) or no extractor is configured (missing API key).
-  Cross-document comparison rules, discrepancy taxonomy, and the reviewer
-  queue remain.
+  The deterministic rule engine ([`app/reconciliation/rules.py`](app/reconciliation/rules.py))
+  and its discrepancy taxonomy are complete: `total_mismatch`,
+  `supplier_mismatch`, `currency_mismatch`, `missing_required_field`,
+  `low_confidence_field`, `unclassified_document_type`, and
+  `document_not_processed`, each tagged `critical` or `advisory`. Values are
+  normalised before comparison (digits-only for totals, casefolded/trimmed
+  for text) so formatting variance — e.g. "1,240.00" vs "1240.00" — is not a
+  false mismatch, matching truth case 8 in the data contract. Two truth-case
+  classes from the data contract are deliberately deferred rather than
+  approximated: document-number cross-reference mismatch and date-outside-
+  window mismatch need fields DocuGuard doesn't extract yet (a cross-document
+  reference number, a normalised date), and quantity/missing-line-item
+  mismatch needs `line_items[]` extraction, which doesn't exist. `POST
+  /bundles/{id}/reconcile` runs the rules against a bundle's persisted
+  document fields, persists the results to `bundle_discrepancies`, and moves
+  the bundle to `ready_for_review` (per docs/reviewer-workflow.md's state
+  machine, v1 has no auto-approval path — every bundle that finishes
+  processing needs a human decision). Rejects with 409 if any document is
+  still queued/processing. Re-running reconciliation replaces the prior
+  discrepancy set rather than accumulating it, since no correction workflow
+  exists yet to make partial re-evaluation meaningful. 18 new tests (pure
+  rule-engine unit tests + DB-backed service tests + HTTP endpoint tests),
+  all passing, Ruff clean.
 - [ ] **4. Grounded policy assistant** — hybrid retrieval, reranking, cited
   responses, adversarial retrieval tests, and access-aware tooling.
 - [ ] **5. LLMOps and security** — prompt/model/version registry, traces,

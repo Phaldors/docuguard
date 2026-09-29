@@ -66,3 +66,18 @@ class DocumentFieldExtractionSummaryResponse(BaseModel):
 class DocumentDetailResponse(DocumentResponse):
     extraction: DocumentExtractionSummaryResponse | None
     fields: DocumentFieldExtractionSummaryResponse | None
+
+
+class BundleDiscrepancyResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    discrepancy_type: str
+    severity: str
+    message: str
+    document_ids: list[UUID]
+    created_at: datetime
+
+
+class ReconcileBundleResponse(BaseModel):
+    bundle: DocumentBundleResponse
+    discrepancies: list[BundleDiscrepancyResponse]
