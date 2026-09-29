@@ -16,6 +16,9 @@ development and the disposable test database.
   `migrate` service owns migrations. The image defaults this switch to true so
   a single-instance portfolio host that does not support pre-deploy commands
   can still initialise its own schema.
+- `DOCUGUARD_SEED_DEMO=true` additionally seeds the synthetic fixture at
+  startup. It is only for a disposable portfolio demo and must remain false or
+  unset in any environment with real case/audit data.
 - Secrets come from environment variables. No `.env` file or API key is copied
   into the image.
 

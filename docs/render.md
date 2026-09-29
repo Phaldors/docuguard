@@ -10,6 +10,12 @@ container also runs `alembic upgrade head` at startup by default. This is a
 single-instance demo fallback, not the multi-replica production strategy;
 `compose.production.yaml` keeps migrations as a separate one-shot service.
 
+For a manually created Render Web Service, set `DOCUGUARD_SEED_DEMO=true`.
+The entrypoint then resets and seeds only the fixed synthetic demo bundle after
+the schema upgrade, so the reviewer screen is usable without Render Shell. Do
+not set this in an environment containing real cases: every service restart
+would reset the demo fixture and its audit history.
+
 ## Why the database URL needs no manual rewrite
 
 Render provides its Postgres `connectionString` in standard

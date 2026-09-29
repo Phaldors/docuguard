@@ -9,4 +9,8 @@ if [ "${DOCUGUARD_RUN_MIGRATIONS:-true}" = "true" ]; then
   /app/.venv/bin/alembic upgrade head
 fi
 
+if [ "${DOCUGUARD_SEED_DEMO:-false}" = "true" ]; then
+  /app/.venv/bin/python -m app.scripts.seed_demo --reset
+fi
+
 exec /app/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
