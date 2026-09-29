@@ -1,0 +1,74 @@
+{
+  "dataset": "naver-clova-ix/cord-v2",
+  "dataset_split": "validation",
+  "sample_count": 20,
+  "extraction_model": "gpt-5-mini",
+  "commit": "b6a5f274dfddfb926c3c12c0293d1a6c0f2da268",
+  "generated_at": "2026-09-28T23:40:31.331531+00:00",
+  "metrics": {
+    "total_accuracy": 1.0,
+    "total_checked": 20,
+    "document_type_accuracy": 1.0,
+    "enrichment_rate": 0.1,
+    "enrichment_note": "document_number/currency: CORD has no ground truth for these fields, so a non-null value is not scored as correct or incorrect -- it may genuinely be printed on the receipt. This rate only shows how often the model reports finding one.",
+    "supplier_name_flagged_count": 8,
+    "supplier_name_flagged_rate": 0.4,
+    "supplier_name_note": "CORD has no supplier_name ground truth either, but manual review of early runs showed the model repeatedly returning a menu item name instead of a supplier/store name. Every non-null supplier_name is flagged for human review below rather than scored, since we cannot auto-verify it."
+  },
+  "limitations": [
+    "CORD only ground-truths 'total'; supplier_name, document_number, and currency have no ground truth at all in this dataset.",
+    "CORD documents are retail receipts, not invoices/purchase orders/delivery notes; document_type is graded against 'other' only.",
+    "Text was reconstructed from CORD's annotated OCR words, not run through DocuGuard's own OCR pipeline (not yet integrated)."
+  ],
+  "failures": [],
+  "supplier_name_flags": [
+    {
+      "index": 1,
+      "value": "Kopi Susu Kolonel",
+      "evidence": "Kopi Susu Kolonel",
+      "confidence": 0.92
+    },
+    {
+      "index": 4,
+      "value": "BBQ Chicken",
+      "evidence": "BBQ Chicken",
+      "confidence": 0.9
+    },
+    {
+      "index": 5,
+      "value": "LE MINERAL",
+      "evidence": "LE MINERAL",
+      "confidence": 0.9
+    },
+    {
+      "index": 7,
+      "value": "Choco Devil",
+      "evidence": "Choco Devil",
+      "confidence": 0.9
+    },
+    {
+      "index": 9,
+      "value": "Tahu Ikan Oma Giok",
+      "evidence": "Tahu Ikan Oma Giok",
+      "confidence": 0.95
+    },
+    {
+      "index": 10,
+      "value": "Serbu 1",
+      "evidence": "Serbu 1",
+      "confidence": 0.9
+    },
+    {
+      "index": 12,
+      "value": "ES KOPI SUSU",
+      "evidence": "ES KOPI SUSU",
+      "confidence": 0.85
+    },
+    {
+      "index": 15,
+      "value": "Arem Arem",
+      "evidence": "Arem Arem",
+      "confidence": 0.8
+    }
+  ]
+}

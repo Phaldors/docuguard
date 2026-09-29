@@ -1,0 +1,141 @@
+{
+  "dataset": "naver-clova-ix/cord-v2",
+  "dataset_split": "test",
+  "sample_count": 100,
+  "extraction_model": "gpt-5-mini",
+  "commit": "b6a5f274dfddfb926c3c12c0293d1a6c0f2da268",
+  "generated_at": "2026-09-29T00:52:42.235116+00:00",
+  "metrics": {
+    "total_accuracy": 1.0,
+    "total_checked": 95,
+    "document_type_accuracy": 1.0,
+    "enrichment_rate": 0.1,
+    "enrichment_note": "document_number/currency: CORD has no ground truth for these fields, so a non-null value is not scored as correct or incorrect -- it may genuinely be printed on the receipt. This rate only shows how often the model reports finding one.",
+    "supplier_name_flagged_count": 19,
+    "supplier_name_flagged_rate": 0.19,
+    "supplier_name_note": "CORD has no supplier_name ground truth either, but manual review of early runs showed the model repeatedly returning a menu item name instead of a supplier/store name. Every non-null supplier_name is flagged for human review below rather than scored, since we cannot auto-verify it."
+  },
+  "limitations": [
+    "CORD only ground-truths 'total'; supplier_name, document_number, and currency have no ground truth at all in this dataset.",
+    "CORD documents are retail receipts, not invoices/purchase orders/delivery notes; document_type is graded as correct for either 'other' or 'invoice', since our schema has no receipt category and a receipt is a defensible invoice call.",
+    "gpt-5-mini is a reasoning model and does not support the 'temperature' parameter, so run-to-run variance is expected even with identical inputs and no code changes. Compare reports across multiple runs before treating a metric change as caused by a code/prompt change.",
+    "Text was reconstructed from CORD's annotated OCR words, not run through DocuGuard's own OCR pipeline (not yet integrated)."
+  ],
+  "failures": [],
+  "supplier_name_flags": [
+    {
+      "index": 1,
+      "value": "J.STB PROMO",
+      "evidence": "J.STB PROMO",
+      "confidence": 0.85
+    },
+    {
+      "index": 5,
+      "value": "TRAD KY TOAST CARTE",
+      "evidence": "TRAD KY TOAST CARTE",
+      "confidence": 0.9
+    },
+    {
+      "index": 13,
+      "value": "BASO KUAH",
+      "evidence": "BASO KUAH",
+      "confidence": 0.9
+    },
+    {
+      "index": 17,
+      "value": "Goblin's Mace",
+      "evidence": "Goblin's Mace",
+      "confidence": 0.98
+    },
+    {
+      "index": 23,
+      "value": "TWIST DONUT",
+      "evidence": "TWIST DONUT",
+      "confidence": 0.95
+    },
+    {
+      "index": 34,
+      "value": "Ash Chick Sambal Matah",
+      "evidence": "Ash Chick Sambal Matah",
+      "confidence": 0.95
+    },
+    {
+      "index": 40,
+      "value": "Snack Lestari All",
+      "evidence": "Snack Lestari All",
+      "confidence": 0.86
+    },
+    {
+      "index": 50,
+      "value": "Superice Cauburry",
+      "evidence": "Superice Cauburry",
+      "confidence": 0.85
+    },
+    {
+      "index": 63,
+      "value": "Kopi Susu Kampung.",
+      "evidence": "Kopi Susu Kampung.",
+      "confidence": 0.9
+    },
+    {
+      "index": 66,
+      "value": "PILLOW DURIA",
+      "evidence": "PILLOW DURIA",
+      "confidence": 0.9
+    },
+    {
+      "index": 67,
+      "value": "CHEESE JOHN",
+      "evidence": "CHEESE JOHN",
+      "confidence": 0.92
+    },
+    {
+      "index": 68,
+      "value": "ICED TT",
+      "evidence": "ICED TT",
+      "confidence": 0.85
+    },
+    {
+      "index": 72,
+      "value": "Choco Devil",
+      "evidence": "Choco Devil",
+      "confidence": 0.9
+    },
+    {
+      "index": 80,
+      "value": "Viet Milk Coffee",
+      "evidence": "Viet Milk Coffee",
+      "confidence": 0.9
+    },
+    {
+      "index": 87,
+      "value": "PHOTAI CHIN",
+      "evidence": "PHOTAI CHIN",
+      "confidence": 0.85
+    },
+    {
+      "index": 88,
+      "value": "STIX ECLAIRS",
+      "evidence": "STIX ECLAIRS",
+      "confidence": 0.9
+    },
+    {
+      "index": 90,
+      "value": "CIRENG PANDAWA",
+      "evidence": "CIRENG PANDAWA",
+      "confidence": 0.9
+    },
+    {
+      "index": 91,
+      "value": "BAKSO BNGKS",
+      "evidence": "BAKSO BNGKS",
+      "confidence": 0.9
+    },
+    {
+      "index": 95,
+      "value": "BASO TAHU",
+      "evidence": "BASO TAHU",
+      "confidence": 0.95
+    }
+  ]
+}
